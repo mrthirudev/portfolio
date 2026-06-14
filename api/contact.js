@@ -22,12 +22,15 @@ module.exports = async (req, res) => {
         headers: { 'Authorization': `Bearer ${sendgridKey}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
+      const respText = await r.text();
+      const respHeaders = {};
+      r.headers && r.headers.forEach && r.headers.forEach((v,k)=>{ respHeaders[k]=v });
       if (!r.ok) {
-        const text = await r.text();
-        console.error('SendGrid error', text);
-        return res.status(502).json({ error: 'SendGrid failed', detail: text });
+        console.error('SendGrid error', { status: r.status, headers: respHeaders, body: respText });
+        return res.status(502).json({ error: 'SendGrid failed', status: r.status, headers: respHeaders, body: respText });
       }
-      return res.json({ ok: true, provider: 'sendgrid' });
+      // return headers and any text for debugging (202 responses typically have empty body)
+      return res.json({ ok: true, provider: 'sendgrid', status: r.status, headers: respHeaders, body: respText });
     } catch (err) { console.error(err); return res.status(500).json({ error: 'SendGrid error' }); }
   }
 
